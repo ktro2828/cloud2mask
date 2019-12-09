@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<launch>
+    <node name="cloud_to_mask"
+          pkg="cloud2mask" type="cloud_to_mask.py"
+          output="screen" cwd="node">
+      <rosparam>
+      input_cloud: /head_mount_kinect/sd/republished_points_desktop
+      camera_info: /head_mount_kinect/hd/camera_info
+    </rosparam>
+    </node>
+</launch>
