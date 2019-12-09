@@ -23,8 +23,6 @@ class Calc_p2d():
             '~input_cloud', "/prosilica_cloud/output")
         self.camera_info = rospy.get_param(
             '~camera_info', "/prosilica/camera_info")
-        self.width = 2050
-        self.height = 2448
         self.cm = image_geometry.cameramodels.PinholeCameraModel()
         self.load_camera_info()
         self.subscribe()
@@ -40,7 +38,7 @@ class Calc_p2d():
             self.input_cloud, PointCloud2, self.callback)
 
     def callback(self, msg):
-        mask = np.zeros((self.width, self.height), dtype=np.uint8)
+        mask = np.zeros((self.cm.height, self.cm.width), dtype=np.uint8)
         points_np = np.array(list(pc2.read_points(
             msg, skip_nans=True,
             field_names=("x", "y", "z")))).T

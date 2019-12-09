@@ -1,11 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
 <launch>
-  <arg name="INPUT_CLOUD" value="/head_mount_kinect/sd/republished_points_desktop" />
+  <arg name="INPUT_CLOUD" value="/head_mount_kinect/qhd/republished_points_desktop" />
   <arg name="CAMERA_INFO" value="/head_mount_kinect/hd/camera_info" />
   <arg name="INPUT_BOX" value="/gripper_box" />
   <arg name="RESOLUTION" default="0.01" />
 
-  <group ns="/head_mount_kinect/sd">
+  <group ns="/head_mount_kinect/qhd">
     <node name="rgb_republish_desktop"
           pkg="image_transport" type="republish"
           args="compressed raw">
@@ -19,7 +19,7 @@
       <remap from="out" to="image_depth_rect_repub_desktop" />
     </node>
 
-    <node name="republished_points_xyzrgb_sd_desktop_desktop"
+    <node name="republished_points_xyzrgb_qhd_desktop_desktop"
           pkg="nodelet" type="nodelet"
           args="standalone depth_image_proc/point_cloud_xyzrgb" >
       <remap from="rgb/camera_info"             to="camera_info"/>
