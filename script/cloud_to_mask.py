@@ -13,16 +13,23 @@ import numpy as np
 from sensor_msgs.msg import Image, PointCloud2
 import sensor_msgs.point_cloud2 as pc2
 from cv_bridge import CvBridge
+from skimage.morphology import convex_hull_image
 
 
 class Calc_p2d():
     def __init__(self):
         self.bridge = CvBridge()
-        self.pub = rospy.Publisher("/cloud_mask", Image, queue_size=10)
+        self.pub = rospy.Publisher("~output", Image, queue_size=10)
         self.input_cloud = rospy.get_param(
             '~input_cloud', "/prosilica_cloud/output")
         self.camera_info = rospy.get_param(
             '~camera_info', "/prosilica/camera_info")
+        self.clip_rect = rospy.get_param(
+            '~clip_rect', True)
+        self.margin = rospy.get_param(
+            '~margin', 20)
+        self.sampling_rate = rospy.get_param(
+            '~sampling_rate', 100)
         self.cm = image_geometry.cameramodels.PinholeCameraModel()
         self.load_camera_info()
         self.subscribe()
@@ -38,10 +45,11 @@ class Calc_p2d():
             self.input_cloud, PointCloud2, self.callback)
 
     def callback(self, msg):
-        mask = np.zeros((self.cm.height, self.cm.width), dtype=np.uint8)
+        mask = np.zeros((self.cm.height, self.cm.width), dtype=np.bool)
         points_np = np.array(list(pc2.read_points(
             msg, skip_nans=True,
             field_names=("x", "y", "z")))).T
+        points_np = points_np[:, ::self.sampling_rate]
         if (points_np.shape[0] != 0):
             points_np = np.pad(points_np, [(0, 1), (0, 0)],
                                'constant',  constant_values=1)
@@ -54,8 +62,19 @@ class Calc_p2d():
             x_in = np.delete(x_in, y_out)
             y_in = np.delete(p2d[0], x_out)
             y_in = np.delete(y_in, y_out)
-            index = (x_in, y_in)
-            mask[index] = 255
+
+            if(self.clip_rect):
+                x_max = np.max(x_in)
+                x_min = np.min(x_in)
+                y_max = np.max(y_in)
+                y_min = np.min(y_in)
+                mask[x_min - self.margin: x_max + self.margin,
+                     y_min - self.margin: y_max + self.margin] = 1
+            else:
+                index = (x_in, y_in)
+                mask[index] = 1
+                mask = convex_hull_image(mask)
+            mask = mask.astype(np.uint8) * 255
 
         else:
             rospy.loginfo("nothing in the gripper")
