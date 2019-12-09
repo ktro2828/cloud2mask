@@ -1,11 +1,69 @@
 <?xml version="1.0" encoding="utf-8"?>
 <launch>
-    <node name="cloud_to_mask"
-          pkg="cloud2mask" type="cloud_to_mask.py"
-          output="screen" cwd="node">
+  <arg name="INPUT_CLOUD" value="/head_mount_kinect/sd/republished_points_desktop" />
+  <arg name="CAMERA_INFO" value="/head_mount_kinect/hd/camera_info" />
+  <arg name="INPUT_BOX" value="/gripper_box" />
+  <arg name="RESOLUTION" default="0.01" />
+
+  <group ns="/head_mount_kinect/sd">
+    <node name="rgb_republish_desktop"
+          pkg="image_transport" type="republish"
+          args="compressed raw">
+      <remap from="in" to="image_color_rect" />
+      <remap from="out" to="image_color_rect_repub_desktop" />
+    </node>
+    <node name="depth_republish_desktop"
+          pkg="image_transport" type="republish"
+          args="compressed raw">
+      <remap from="in" to="image_depth_rect" />
+      <remap from="out" to="image_depth_rect_repub_desktop" />
+    </node>
+
+    <node name="republished_points_xyzrgb_sd_desktop_desktop"
+          pkg="nodelet" type="nodelet"
+          args="standalone depth_image_proc/point_cloud_xyzrgb" >
+      <remap from="rgb/camera_info"             to="camera_info"/>
+      <remap from="rgb/image_rect_color"        to="image_color_rect_repub_desktop"/>
+      <remap from="depth_registered/image_rect" to="image_depth_rect_repub_desktop"/>
+      <remap from="depth_registered/points"     to="republished_points_desktop"/>
+      <param name="queue_size" type="int" value="$(arg queue_size)"/>
+    </node>
+  </group>
+
+  <node name="gripper_box_publisher"
+        pkg="box_publisher" type="pub_box.py">
+    <remap from="~output" to="gripper_box" />
       <rosparam>
-      input_cloud: /head_mount_kinect/sd/republished_points_desktop
+        x: 0.1
+        y: 0.0
+        z: 0.0
+        w: 0.3
+        d: 0.2
+        h: 0.2
+        frame: l_gripper_tool_frame
+      </rosparam>
+  </node>
+
+  <node name="attention_clipper_gripper"
+        pkg="nodelet" type="nodelet"
+        args="standalone jsk_pcl/AttentionClipper">
+    <remap from="~input" to="$(arg CAMERA_INFO)" />
+    <remap from="~input/points" to="$(arg INPUT_CLOUD)" />
+    <remap from="~input/box" to="$(arg INPUT_BOX)" />
+  </node>
+
+  <node name="extract_indices_gripper"
+        pkg="jsk_pcl_ros" type="extract_indices">
+    <remap from="~input" to="$(arg INPUT_CLOUD)" />
+    <remap from="~indices" to="attention_clipper_gripper/output/point_indices" />
+  </node>
+
+  <node name="cloud_to_mask"
+        pkg="cloud2mask" type="cloud_to_mask.py"
+        output="screen" cwd="node">
+    <rosparam>
+      input_cloud: /extract_indices_gripper/output
       camera_info: /head_mount_kinect/hd/camera_info
     </rosparam>
-    </node>
+  </node>
 </launch>
