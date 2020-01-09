@@ -14,6 +14,7 @@ from sensor_msgs.msg import Image, PointCloud2
 import sensor_msgs.point_cloud2 as pc2
 from cv_bridge import CvBridge
 from skimage.morphology import convex_hull_image
+import time
 
 
 class Calc_p2d():
@@ -49,8 +50,9 @@ class Calc_p2d():
         points_np = np.array(list(pc2.read_points(
             msg, skip_nans=True,
             field_names=("x", "y", "z")))).T
-        points_np = points_np[:, ::self.sampling_rate]
-        if (points_np.shape[0] != 0):
+        if (points_np.shape[0] != 0 and
+                points_np.shape[1] > self.sampling_rate):
+            points_np = points_np[:, ::self.sampling_rate]
             points_np = np.pad(points_np, [(0, 1), (0, 0)],
                                'constant',  constant_values=1)
             p2d = np.matmul(self.P_np, points_np)
@@ -77,10 +79,11 @@ class Calc_p2d():
             mask = mask.astype(np.uint8) * 255
 
         else:
-            rospy.loginfo("nothing in the gripper")
+            rospy.loginfo("no cloud")
+            mask = mask.astype(np.uint8)
             mask[:] = 255
         msg_out = self.bridge.cv2_to_imgmsg(mask, "mono8")
-        msg_out.header.stamp = msg.header.stamp
+        msg_out.header = msg.header
         self.pub.publish(msg_out)
 
 def main(args):
