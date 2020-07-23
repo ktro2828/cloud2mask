@@ -5,16 +5,16 @@
 Project 3d pointcloud to pixel.
 """
 
+import sys
+
+from cv_bridge import CvBridge
 import image_geometry
+import numpy as np
 import rospy
 from sensor_msgs.msg import CameraInfo
-import sys
-import numpy as np
 from sensor_msgs.msg import Image, PointCloud2
 import sensor_msgs.point_cloud2 as pc2
-from cv_bridge import CvBridge
 from skimage.morphology import convex_hull_image
-import time
 
 
 class Calc_p2d():
@@ -93,4 +93,3 @@ def main(args):
 
 if __name__ == '__main__':
     main(sys.argv)
-
