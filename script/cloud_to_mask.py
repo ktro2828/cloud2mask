@@ -86,10 +86,12 @@ class Calc_p2d():
         msg_out.header = msg.header
         self.pub.publish(msg_out)
 
+
 def main(args):
     rospy.init_node("cloud_to_mask", anonymous=False)
     calc_p2d = Calc_p2d()
     rospy.spin()
+
 
 if __name__ == '__main__':
     main(sys.argv)
